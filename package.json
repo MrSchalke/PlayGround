@@ -1,0 +1,10 @@
+{
+  "name": "weed-firm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Weed Firm — a browser grow-room tycoon in German.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}

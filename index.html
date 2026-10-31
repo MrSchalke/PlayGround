@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#050806" />
+  <meta name="description" content="Weed Firm — baue einen Growroom auf, ziehe seltene Sorten, halte die Hitze unten und verkaufe deinen Vorrat. Ein Grow-Imperium für Browser und Touch." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Weed Firm — Anbauen. Ernten. Imperium.</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070d08'/%3E%3Cpath d='M32 52c-10-7-14-15-14-24 7 0 12 4 14 11 2-7 7-11 14-11 0 9-4 17-14 24Z' fill='%239dff5e'/%3E%3C/svg%3E" />
+  <link rel="preload" href="./assets/fonts/bebas-neue.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./ui.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene" aria-label="Ein 3D-Growroom mit sechs Töpfen unter LED-Lichtern"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div id="markers" aria-hidden="true"></div>
+
+    <header id="hud">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+        </div>
+        <div class="brand-name">
+          <h1>WEED<span>FIRM</span></h1>
+          <p>ANBAUEN · ERNTEN · IMPERIUM</p>
+        </div>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat level-stat" id="level-stat" title="Level und Erfahrung">
+          <div class="lvl-ring" id="lvl-ring"><span id="lvl-num">1</span></div>
+          <div class="stat-copy">
+            <small>LEVEL</small>
+            <b id="lvl-xp">25 / 60 XP</b>
+          </div>
+        </div>
+
+        <div class="stat cash-stat" id="cash-stat" title="Bargeld">
+          <span class="stat-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 3v18" /><path d="M16.5 7H9.8a2.8 2.8 0 0 0 0 5.6h4.4a2.8 2.8 0 0 1 0 5.6H6.8" />
+            </svg>
+          </span>
+          <div class="stat-copy">
+            <small>GELD</small>
+            <b id="cash">$320</b>
+          </div>
+        </div>
+
+        <div class="stat stash-stat" title="Vorrat — Gramm zum Verkauf">
+          <span class="stat-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="12" cy="12" r="7" /><path d="M9 8c1 2 2 3 3 3s2-1 3-3M8 13c2 1 3 2 4 2s2-1 4-2M12 5v14" />
+            </svg>
+          </span>
+          <div class="stat-copy">
+            <small>VORRAT</small>
+            <b id="stash">3.4 g</b>
+          </div>
+        </div>
+
+        <div class="stat heat-stat" id="heat-stat" title="Hitze — polizeiliche Aufmerksamkeit">
+          <div class="heat-head">
+            <small>HITZE</small>
+            <b id="heat-pct">0%</b>
+          </div>
+          <div class="heat-track"><i id="heat-fill"></i></div>
+        </div>
+      </div>
+
+      <button id="sound-btn" class="icon-btn" aria-label="Ton an oder aus" title="Ton an oder aus"></button>
+    </header>
+
+    <aside id="sheet" aria-live="polite">
+      <div id="tabs" role="tablist" aria-label="Spielbereiche">
+        <button class="tab on" data-tab="grow" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12C12 8 9 6 5 6c0 4 3 6 7 6Z"/><path d="M12 12c0-3 2.5-5 6-5 0 3.5-2.5 5-6 5Z"/></svg>
+          <span class="tab-label">Anbau</span>
+          <span class="badge" id="grow-badge"></span>
+        </button>
+        <button class="tab" data-tab="shop" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span class="tab-label">Samen</span>
+          <span class="tab-badge" id="shop-badge"></span>
+        </button>
+        <button class="tab" data-tab="market" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+          <span class="tab-label">Markt</span>
+          <span class="badge" id="market-badge"></span>
+        </button>
+        <button class="tab" data-tab="upgrades" role="tab">
+          <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          <span class="tab-label">Ausbau</span>
+        </button>
+      </div>
+      <div class="sheet-body" id="sheet-body"></div>
+      <div class="sheet-glow" aria-hidden="true"></div>
+    </aside>
+
+    <div id="toasts" aria-live="polite"></div>
+    <div id="flash" aria-hidden="true"></div>
+
+    <section id="start" class="start">
+      <div class="start-bg" aria-hidden="true"></div>
+      <div class="start-card">
+        <div class="start-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+        </div>
+        <p class="start-eyebrow">SEIT 2026 · KALIFORNIEN</p>
+        <h1 class="start-title">WEED<span>FIRM</span></h1>
+        <p class="start-tag">Zieh sie groß. Ernte sie. Verkauf sie.<br />Und halt dir die Hitze vom Hals.</p>
+        <button id="start-btn" class="start-btn" type="button">Start</button>
+        <p id="start-note" class="start-note">Pflanzen · Gießen · Ernten · Verkaufen · Aufsteigen</p>
+        <div class="start-steps">
+          <div><b>01</b><span>Pflanzen</span><small>Sorte wählen</small></div>
+          <div><b>02</b><span>Anbau</span><small>Rechtzeitig gießen</small></div>
+          <div><b>03</b><span>Verkaufen</span><small>Den Spike mitnehmen</small></div>
+        </div>
+        <p class="start-foot">Touch + Maus · speichert automatisch</p>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
